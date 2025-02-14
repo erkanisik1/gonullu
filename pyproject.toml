@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Gonullu"
+version = "1.1.5"
+description = "Gonullu Paket Derleme Sistemi"
+authors = [
+    {name = "Ilker Manap", email = "ilkermanap@gmail.com"},
+    {name = "Muhammet Dilmac", email = "iletisim@muhammetdilmac.com.tr"},
+    {name = "Erkan Işık", email = "erkanisik@pisilinux.org"}
+]
+dependencies = [
+    "docker",
+    "requests",
+    "psutil",
+    "pyyaml"
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+gonullu = "gonullu:main"
+
+[tool.setuptools]
+packages = ["gonullu"]

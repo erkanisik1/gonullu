@@ -1,9 +1,11 @@
 import json
+import os
 import random
 import shutil
 
 import psutil
-from docker import Client
+from docker import DockerClient
+from docker.api.client import APIClient
 
 from gonullu.log import Log
 
@@ -23,12 +25,14 @@ class Docker:
         self.host_config = None
         self.my_container = None
         self.tmp_status = False
+        # self.docker_client = DockerClient(base_url='unix://var/run/docker.sock') # kaldırıldı
+        self.my_client = APIClient(base_url='unix://var/run/docker.sock')
 
     def start(self):
         # containerımızı parametreleri ile çalıştıracağımız fonksiyonumuz.
-        if not self.my_client:
+        if self.my_client is not None:
             # my_client'de çalışan docker process'ini yakalıyorum.
-            self.my_client = Client(base_url='unix://var/run/docker.sock', version='1.23')
+            self.my_client = self.my_client
 
         # container'ımızın host configlerini yapalım.
         self.host_config = self.my_client.create_host_config(mem_limit='%sM' % self.memory_limit, binds=self.binds, security_opt=['seccomp:unconfined'])
@@ -37,7 +41,8 @@ class Docker:
         # kullanılacak imaj son sürüme yükseltelim
         self.tmp_status = False
         message = '%s imajı güncelleniyor' % self.image
-        for line in self.my_client.pull(self.image, stream=True):
+
+        for line in self.my_client.pull(self.image, stream=True):  # değiştirildi
             line = json.loads(line.decode('UTF-8'))
             if line['status'] == 'Downloading':
                 if self.tmp_status is False:
@@ -51,10 +56,10 @@ class Docker:
 
         # my_container ile konteynırımızı oluşturuyoruz ve onda saklıyoruz.
         self.my_container = self.my_client.create_container(image=self.image, command=self.command, name=self.name,
-                                                            volumes=self.volumes,
-                                                            host_config=self.host_config)
+                                                                volumes=self.volumes,
+                                                                host_config=self.host_config)
         # ve konteynırımızı çalıştırmaya başlıyoruz.
-        self.my_client.start(self.name)
+        self.my_client.start(self.name)  # değiştirildi
 
     def pause(self):
         # containerımızı durdurmak için çalıştıracağımız fonksiyonumuz.
@@ -125,7 +130,7 @@ class Docker:
 
     def check(self):
         # derleme işlemi devam ediyor mu kontrol edelim
-        for container in self.my_client.containers():
+        for container in self.my_client.containers(all=True):
             if container['Names'][0].replace('/', '') == self.name:
                 return 0
         else:
@@ -142,5 +147,6 @@ class Docker:
             self.remove()
 
         self.log.blank_line()
-        self.log.warning(message='CTRL+C\'ye tıkladınız!')
-        self.log.get_exit()
+        self.log.warning(message='Gönüllü programı sonlandırıldı!')
+        # sys.exit() yerine programı kontrollü bir şekilde sonlandır
+        os._exit(0)

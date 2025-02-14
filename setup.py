@@ -26,7 +26,7 @@ setup(name='Gonullu',
       license='MIT',
       packages=['gonullu'],
       install_requires=[
-          'argparse', 'requests', 'docker-py', 'psutil', 'colorama', 'pyaml'
+          'argparse', 'requests', 'docker>=6.0.0', 'psutil', 'colorama', 'pyaml'
       ],
       scripts=['bin/gonullu'],
       include_package_data=True,

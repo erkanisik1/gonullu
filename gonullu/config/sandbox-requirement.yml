@@ -1,11 +1,8 @@
 - glibc
 - dejavu-fonts
+- virtualbox
 - findutils
+- e2fsprogs
+- mesa
 - gtk2
 - ModemManager
-- vlc
-- systemtap
-- spidermonkey
-- thunderbird
-- icedtea-web-java7
-- gpgme
