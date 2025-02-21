@@ -7,6 +7,13 @@ import traceback
 
 from gonullu import Log, Farm, Volunteer
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Gonullu Paket Derleme Sistemi')
+    parser.add_argument('-j', '--jobs', type=int, help='Docker içindeki /etc/pisi/pisi.conf içindeki -j parametresi')
+    parser.add_argument('--cpu', type=int, default=50, help='Docker için kullanılacak CPU yüzdesi (default: 50)')
+    parser.add_argument('--memory', type=int, default=25, help='Docker için kullanılacak hafıza yüzdesi (default: 25)')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Detaylı çıktı')
+    return parser.parse_args()
 
 def usage():
     print("""
@@ -20,8 +27,16 @@ Asagidaki satir, docker icin islemcinin %70'ini, fiziksel hafizanin
 """)
     sys.exit()
 
+def main():
+    args = parse_arguments()
+    
+    log_main = Log()
+    farm_main = Farm()
+    volunteer_main = Volunteer()
 
-def main(log_main, volunteer_main, farm_main):
+    if args.verbose:
+        log_main.set_verbose(True)
+
     while 1:
         response = farm_main.get_package()
         if (response == -1) or (response ==  -2):
@@ -48,50 +63,5 @@ def main(log_main, volunteer_main, farm_main):
                     # container bulundu. İşlem sürüyor.
                     farm_main.wait(message='den beri derleme işlemi %s paketi için devam ediyor.' % response['package'])
 
-
-if __name__ == "__main__":
-    log = Log()
-
-    parser = argparse.ArgumentParser(description='This is pisilinux volunteer application')
-    parser.add_argument('-k', '--kullanim', action="store_true", dest='usage', default=False)
-    parser.add_argument('-m', '--memory', action='store', dest='memory_limit', default=50, type=int)
-    parser.add_argument('-c', '--cpu', action='store', dest='cpu_set', default=1, type=int)
-    parser.add_argument('-e', '--email', action='store', dest='email', default='ilkermanap@gmail.com', type=str)
-    parser.add_argument('-j', '--job', action='store', dest='job', default=5, type=int)
-
-    args = parser.parse_args()
-
-    if args.usage:
-        usage()
-
-    if os.getgid() != 0:
-        log.error('Lütfen programı yönetici(sudo) olarak çalıştırınız.')
-        log.get_exit()
-
-    docker_socket_file = '/var/run/docker.sock'
-    if not os.path.exists(docker_socket_file):
-        log.error(message='Lütfen ilk önce docker servisini çalıştırınız!')
-        log.get_exit()
-
-    if not args.email:
-        log.error(message='Lütfen bir mail adresi belirtiniz. (-e parametresi)')
-        log.get_exit()
-
-    print(args)
-
-    farm = Farm('https://ciftlik.pisilinux.org', args.email)
-    volunteer = Volunteer(args)
-
-    # CTRL+C call_exit'e yönlendirildi. Bu sayede çalışan container silinecek ve öyle çıkış yapılacak.
-    signal.signal(signal.SIGINT, volunteer.exit_signal)
-    # CTRL+Z sinyali iptal edildi.
-    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
-    try:
-        os.system("stty -echo")
-        main(log, volunteer, farm)
-    except:
-      log.error('Bilinmeyen bir hata ile karşılaşıldı: %s' % ( traceback.format_exc() ))
-    finally:
-        log.error('Programdan çıkılıyor.')
-        os.system("stty echo")
-        sys.exit(0)
+if __name__ == '__main__':
+    main()
